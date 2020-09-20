@@ -174,6 +174,42 @@ def load_corpus(dataset_str):
     y_test[test_mask, :] = labels[test_mask, :]
 
     adj = adj + adj.T.multiply(adj.T > adj) - adj.multiply(adj.T > adj)
+    '''
+    The above line makes the adjacency matrix symmetric in the following manner:
+    adj=
+       1	  2	  0
+     1/5	  1	1/2
+    3/10	1/5	  0
+
+
+    adj.T=
+    1	1/5	3/10
+    2	  1	 1/5
+    0	1/2	   0
+
+    adj.T>adj
+    false false true
+    true  false false
+    false true  false
+
+    adj.T.multiply(adj.T>adj)
+    0	  0	3/10
+    2	  0	   0
+    0	1/2	   0
+
+    adj.multiply(adj.T>adj)
+       0	  0	  0
+     1/5	  0	  0
+       0	1/5	  0
+
+    adj + adj.T.multiply(adj.T>adj)- adj.multiply(adj.T>adj)
+
+       1	  2 3/10
+       2	  1	 1/2
+    3/10	1/2	   0
+    The need to make the matrix symmetric in such fashion comes from the fact
+    that we added the tf-idf value to (document, word) entry in the matrix but did not add it to (word, document). 
+    '''
 
     return adj, features, y_train, y_val, y_test, train_mask, val_mask, test_mask, train_size, test_size
 
@@ -206,7 +242,9 @@ def preprocess_features(features):
     features = r_mat_inv.dot(features)
     return sparse_to_tuple(features)
 
-
+'''
+Function to normalize the adjacency matrix
+'''
 def normalize_adj(adj):
     """Symmetrically normalize adjacency matrix."""
     adj = sp.coo_matrix(adj)
