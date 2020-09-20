@@ -46,10 +46,22 @@ flags.DEFINE_integer('early_stopping', 10,
 flags.DEFINE_integer('max_degree', 3, 'Maximum Chebyshev polynomial degree.')
 
 # Load data
+'''
+Load the corpus from the file. We load/generate the following data structures:
+-features: (train_size + vocab_size + test_size, word_embeddings_dim) Matrix (N,1000)
+-y_train, y_val, y_test: Individual label arrays.
+-train_mask, test_mask, val_mask: these are masking arrays of features and labels.
+-train_size, test_size
+-Adjacency matrix(adj): We load the symmetric adjacency graph
+
+'''
 adj, features, y_train, y_val, y_test, train_mask, val_mask, test_mask, train_size, test_size = load_corpus(
     FLAGS.dataset)
 print(adj)
 # print(adj[0], adj[1])
+'''
+We edit the feature matrix (features) to make it into an identity matrix of (train_size + vocab_size + test_size, train_size + vocab_size + test_size) size.
+'''
 features = sp.identity(features.shape[0])  # featureless
 
 print(adj.shape)
@@ -84,6 +96,20 @@ placeholders = {
 }
 
 # Create model
+'''
+We build a GCN model with the following parameters:
+-num_support (1): Number of supporting matrices (adj in this case)
+-number of features
+-Labels
+-Dropout (default to 0)
+
+The built model has the following properties:
+-Adamoptimizer
+-Learning rate=0.02
+-Embedding dimension of hidden layer = 200
+-Masked_softmax_cross_entropy error
+-Relu activation function
+'''
 print(features[2][1])
 model = model_func(placeholders, input_dim=features[2][1], logging=True)
 
