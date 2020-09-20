@@ -440,7 +440,7 @@ for i in range(train_size):
     label_index = label_list.index(label)
     one_hot[label_index] = 1
     ally.append(one_hot)
-
+ 
 for i in range(vocab_size):
     one_hot = [0 for l in range(len(label_list))]
     ally.append(one_hot)
