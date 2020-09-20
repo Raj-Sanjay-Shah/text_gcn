@@ -1,6 +1,6 @@
 # text_gcn
 
-The implementation of Text GCN in our paper:
+The implementation of Text GCN in the paper:
 
 Liang Yao, Chengsheng Mao, Yuan Luo. "Graph Convolutional Networks for Text Classification." In 33rd AAAI Conference on Artificial Intelligence (AAAI-19), 7370-7377
 
