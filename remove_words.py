@@ -31,7 +31,7 @@ f = open('data/corpus/' + dataset + '.txt', 'rb')
 # f = open('data/wiki_long_abstracts_en_text.txt', 'r')
 for line in f.readlines():
     doc_content_list.append(line.strip().decode('latin1'))
-f.close()
+f.close() 
 
 
 word_freq = {}  # to remove rare words
