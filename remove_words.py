@@ -24,6 +24,8 @@ print(stop_words)
 # word_embeddings_dim = len(embd[0])
 # dataset = '20ng'
 
+#Read the data/corpus/mr.txt line by line. Each line consists of a document
+
 doc_content_list = []
 f = open('data/corpus/' + dataset + '.txt', 'rb')
 # f = open('data/wiki_long_abstracts_en_text.txt', 'r')
@@ -34,6 +36,8 @@ f.close()
 
 word_freq = {}  # to remove rare words
 
+#Store the frequency of each unique word in all the documents in a dictionary
+
 for doc_content in doc_content_list:
     temp = clean_str(doc_content)
     words = temp.split()
@@ -43,6 +47,10 @@ for doc_content in doc_content_list:
         else:
             word_freq[word] = 1
 
+	
+#Remove stop words from each document and remove less frequent words (threshold=5). 
+#This is done for all datasets except mr. Store the list of cleaned documents in data/corpus/mr.clean.txt
+	
 clean_docs = []
 for doc_content in doc_content_list:
     temp = clean_str(doc_content)
@@ -71,6 +79,8 @@ f.close()
 min_len = 10000
 aver_len = 0
 max_len = 0 
+
+#Calculate the metadata about corpus like minimum document size, maximum document size and average document size.
 
 f = open('data/corpus/' + dataset + '.clean.txt', 'r')
 #f = open('data/wiki_long_abstracts_en_text.txt', 'r')
