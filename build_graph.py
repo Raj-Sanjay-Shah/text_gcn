@@ -28,8 +28,18 @@ if dataset not in datasets:
 #_, embd, word_vector_map = loadWord2Vec(word_vector_file)
 # word_embeddings_dim = len(embd[0])
 
-word_embeddings_dim = 300
+#Set the feature embedding dimension size as 1000
+
+word_embeddings_dim = 1000
 word_vector_map = {}
+
+"""
+Make four lists:
+doc_name_list = [document_id, train/test, 1/0]
+doc_train_list = [document_id, train, 1/0]
+doc_test_list = [document_id, test, 1/0]
+doc_content_list // read cleaned data from the previous step, data/corpus/mr.clean.txt
+"""
 
 # shulffing
 doc_name_list = []
@@ -56,6 +66,11 @@ for line in lines:
     doc_content_list.append(line.strip())
 f.close()
 # print(doc_content_list)
+
+"""
+Get all the row numbers/ids of the doc_train_list elements in the doc_name_list into the list train_ids and do a similar process for test_ids. 
+Randomly shuffle both lists and write to data/mr.train.index and data/mr.test.index respectively.
+"""
 
 train_ids = []
 for train_name in doc_train_list:
@@ -96,6 +111,11 @@ for id in ids:
 shuffle_doc_name_str = '\n'.join(shuffle_doc_name_list)
 shuffle_doc_words_str = '\n'.join(shuffle_doc_words_list)
 
+"""
+Make a new list containing the shuffled train and test ids and write into data/mr_shuffle.txt. 
+The corpus of the same indices is written into data/corpus/mr_shuffle.txt.
+"""
+
 f = open('data/' + dataset + '_shuffle.txt', 'w')
 f.write(shuffle_doc_name_str)
 f.close()
@@ -105,6 +125,10 @@ f.write(shuffle_doc_words_str)
 f.close()
 
 # build vocab
+
+"""
+Then we make a dictionary of {word, frequency} and also build a list of unique words (vocabulary) and write the list into data/corpus/mr_vocab.txt.
+"""
 word_freq = {}
 word_set = set()
 for doc_words in shuffle_doc_words_list:
@@ -118,6 +142,14 @@ for doc_words in shuffle_doc_words_list:
 
 vocab = list(word_set)
 vocab_size = len(vocab)
+
+
+"""
+Make a dictionary word_doc_list that stores { word, list of documents the word appears in}. We also make two more dictionaries of 
+word_doc_freq = {word, number of documents the word appears in}
+word_id_map = {word, index of word in vocabulary}
+
+"""
 
 word_doc_list = {}
 
@@ -153,7 +185,31 @@ f.close()
 '''
 Word definitions begin
 '''
-'''
+"""
+
+
+
+The following code generates the alternate feature matrix
+The Feature matrix used: N*N identity matrix , N= vocab_size+ corpus_size 
+Alternate Feature matrix: N * 1000, 1000 is the word embedding size
+
+vocab -> 18000
+word->1000
+
+Using wordnet.synset we get the english dictionary definitions of all the words in our vocabulary and store it in data/corpus/mr_vocab_def.txt. 
+We run the tf-idf vectorizer on the word definitions to build a document- word matrix(corpus_size, 1000) 
+and limit the max number of features to 1000 (builds a vocabulary that only considers the top max_features ordered by term frequency across the corpus). 
+We effectively convert each word in the vocabulary to an embedding based on the word meanings as the corpus. 
+We write the word vectors to data/corpus/mr_word_vectors.txt.
+
+Word_Vocabulary           Meaning            Meaning_Word-1            Meaning_Word-2...           Meaning_Word-1000
+Vocab_word_1    Meaning(Document)      tf-idf_Meaning_word1      tf-idf_Meaning_word2        tf-idf_Meaning_word1000
+
+For example:
+       gloat      brag boastfully             		tf-idf_value_for brag...    tf-idf_value_for boastfully...
+     
+"""
+
 definitions = []
 
 for word in vocab:
@@ -201,12 +257,17 @@ f.close()
 word_vector_file = 'data/corpus/' + dataset + '_word_vectors.txt'
 _, embd, word_vector_map = loadWord2Vec(word_vector_file)
 word_embeddings_dim = len(embd[0])
-'''
+
 
 '''
 Word definitions end
 '''
 
+"""
+We get the unique labels from the data/corpus/mr_shuffle.txt file and write to data/corpus/mr_labels.txt. 
+We separate out 90% of the train set and store it in data/mr.real_train.name. 
+
+"""
 # label list
 label_set = set()
 for doc_meta in shuffle_doc_name_list:
@@ -232,6 +293,22 @@ real_train_doc_names_str = '\n'.join(real_train_doc_names)
 f = open('data/' + dataset + '.real_train.name', 'w')
 f.write(real_train_doc_names_str)
 f.close()
+
+'''
+Then we add the embedding value for each word present in the document from the previous step and normalize it using the document length.
+	for each word in document,
+			documentvector= ( Σ wordvector)/documentlength
+We input this data into a compressed sparse row matrix. csr_matrix((data_x, (row_x, col_x)), shape=(real_train_size, word_embeddings_dim)). 
+Note that real_train_size is 90% of the total train set size. 
+We then one hot encode the label and store it in a list. 
+For mr dataset this list is of the form [ [1,0], [1,0], [0,1]....[1,0] ]. 
+We perform the same steps for the entirety of the test set.
+
+We create another sparse matrix of the dimensions:
+(train_size + vocab_size, word_embeddings_dim) and the label matrix of dimension (train_size + vocab_size, label_size). 
+Note that the one hot encoding array consists of all zeros for the vocabulary.
+'''
+
 
 row_x = []
 col_x = []
@@ -377,6 +454,14 @@ Doc word heterogeneous graph
 '''
 
 # word co-occurence with context windows
+
+'''
+The next step is to find the word co-occurrence in the same window. 
+We first create a list of all the windows of size( ,window_size). 
+We then create a dictionary {word, number of windows the word appears in}. 
+We then create a dictionary - word_pair_count consisting of {(word1_id,word2_id), the number of windows the words occur together in}. 
+We then calculate the PMI between words.
+'''
 window_size = 20
 windows = []
 
@@ -406,6 +491,8 @@ for window in windows:
         appeared.add(window[i])
 
 word_pair_count = {}
+#{(word1_id,word2_id), the number of windows the words occur together in}
+
 for window in windows:
     for i in range(1, len(window)):
         for j in range(0, i):
@@ -466,6 +553,10 @@ for i in range(vocab_size):
                 weight.append(similarity)
 '''
 # doc word frequency
+'''
+Then we construct a dictionary with {(document_id,word_id), frequency}. 
+Subsequently, we add document, word weights to the row, col, and weight lists above using the following code: 
+'''
 doc_word_freq = {}
 
 for doc_id in range(len(shuffle_doc_words_list)):
@@ -498,12 +589,14 @@ for i in range(len(shuffle_doc_words_list)):
                   word_doc_freq[vocab[j]])
         weight.append(freq * idf)
         doc_word_set.add(word)
-
+'''
+With this we finally obtain the adjacency matrix:
+'''
 node_size = train_size + vocab_size + test_size
 adj = sp.csr_matrix(
     (weight, (row, col)), shape=(node_size, node_size))
 
-# dump objects
+# We dump the four sparse matrices and matrices of respective labels formed till now using pickle:
 f = open("data/ind.{}.x".format(dataset), 'wb')
 pkl.dump(x, f)
 f.close()
