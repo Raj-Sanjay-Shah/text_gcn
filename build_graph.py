@@ -11,6 +11,8 @@ from nltk.corpus import wordnet as wn
 from sklearn.feature_extraction.text import TfidfVectorizer
 import sys
 from scipy.spatial.distance import cosine
+import nltk
+nltk.download('wordnet')
 
 if len(sys.argv) != 2:
 	sys.exit("Use: python build_graph.py <dataset>")
@@ -78,7 +80,7 @@ for train_name in doc_train_list:
     train_ids.append(train_id)
 print(train_ids)
 random.shuffle(train_ids)
-
+    
 # partial labeled data
 #train_ids = train_ids[:int(0.2 * len(train_ids))]
 
