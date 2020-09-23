@@ -52,6 +52,8 @@ class Layer(object):
     """
 
     def __init__(self, **kwargs):
+        # Came here from GraphConvoltuion classes' constructor
+        print("First in Layer Class\n")
         allowed_kwargs = {'name', 'logging'}
         for kwarg in kwargs.keys():
             assert kwarg in allowed_kwargs, 'Invalid keyword argument: ' + kwarg
@@ -65,16 +67,27 @@ class Layer(object):
         self.logging = logging
         self.sparse_inputs = False
 
+        # Return to GraphConvolution classes' constructor
+
     def _call(self, inputs):
         return inputs
 
     def __call__(self, inputs):
+
+        # Came here from Model class's build function in models.py
+
         with tf.name_scope(self.name):
             if self.logging and not self.sparse_inputs:
                 tf.summary.histogram(self.name + '/inputs', inputs)
+
+            # Go to GraphConvolution classes' _call function
             outputs = self._call(inputs)
+            # Returned from GraphConvolution classes' _call function
+
             if self.logging:
                 tf.summary.histogram(self.name + '/outputs', outputs)
+
+            # Return to Model classes' build function in models.py
             return outputs
 
     def _log_vars(self):
@@ -134,7 +147,12 @@ class GraphConvolution(Layer):
     def __init__(self, input_dim, output_dim, placeholders, dropout=0.,
                  sparse_inputs=False, act=tf.nn.relu, bias=False,
                  featureless=False, **kwargs):
+
+        # Came here from GCN class's _build function in models.py
+
+        # Go to Layer class's constructor
         super(GraphConvolution, self).__init__(**kwargs)
+        # Returned from Layer class's constructor
 
         if dropout:
             self.dropout = placeholders['dropout']
@@ -160,7 +178,12 @@ class GraphConvolution(Layer):
         if self.logging:
             self._log_vars()
 
+        # Return to GCN classes' _build function in models.py
+
     def _call(self, inputs):
+
+        # Came here from Layer class's __call__ function
+
         x = inputs
 
         # dropout
@@ -184,5 +207,10 @@ class GraphConvolution(Layer):
         # bias
         if self.bias:
             output += self.vars['bias']
+        # Below is an addition to the original GCN code
         self.embedding = output #output
+
+        # Return to Layer class's __call__ function
         return self.act(output)
+
+

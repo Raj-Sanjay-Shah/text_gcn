@@ -85,8 +85,11 @@ else:
     raise ValueError('Invalid argument for model: ' + str(FLAGS.model))
 
 # Define placeholders
+
+# All the inputs to the GCN are stored as placeholders
+
 placeholders = {
-    'support': [tf.sparse_placeholder(tf.float32) for _ in range(num_supports)],
+    'support': [tf.sparse_placeholder(tf.float32) for _ in range(num_supports)], # The Supporting matrix (Adjacency)
     'features': tf.sparse_placeholder(tf.float32, shape=tf.constant(features[2], dtype=tf.int64)),
     'labels': tf.placeholder(tf.float32, shape=(None, y_train.shape[1])),
     'labels_mask': tf.placeholder(tf.int32),
@@ -111,6 +114,8 @@ The built model has the following properties:
 -Relu activation function
 '''
 print(features[2][1])
+
+# Go to GCN class's constructor in models.py
 model = model_func(placeholders, input_dim=features[2][1], logging=True)
 
 # Initialize session
@@ -128,6 +133,7 @@ def evaluate(features, support, labels, mask, placeholders):
 
 
 # Init variables
+# Session has started running
 sess.run(tf.global_variables_initializer())
 
 cost_val = []
@@ -183,6 +189,7 @@ print("Micro average Test Precision, Recall and F1-Score...")
 print(metrics.precision_recall_fscore_support(test_labels, test_pred, average='micro'))
 
 # doc and word embeddings
+# We use the first layer 
 print('embeddings:')
 word_embeddings = outs[3][train_size: adj.shape[0] - test_size]
 train_doc_embeddings = outs[3][:train_size]  # include val docs

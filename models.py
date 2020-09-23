@@ -1,6 +1,7 @@
 from layers import *
 from metrics import *
 import tensorflow as tf
+# import tensorflow.compat.v1 as tf
 
 flags = tf.app.flags
 FLAGS = flags.FLAGS
@@ -8,6 +9,9 @@ FLAGS = flags.FLAGS
 
 class Model(object):
     def __init__(self, **kwargs):
+
+        # Came here from GCN class's constructor
+
         allowed_kwargs = {'name', 'logging'}
         for kwarg in kwargs.keys():
             assert kwarg in allowed_kwargs, 'Invalid keyword argument: ' + kwarg
@@ -33,18 +37,27 @@ class Model(object):
         self.optimizer = None
         self.opt_op = None
 
+        # Return to GCN class's constructor
+
     def _build(self):
+        print("In Model classes' _build function\n")
         raise NotImplementedError
 
     def build(self):
         """ Wrapper for _build() """
+        # Came here from GCN classes' constructor
+
         with tf.variable_scope(self.name):
+            # Go to GCN classes' _build function
             self._build()
+            # Returned from GCN's _build function
 
         # Build sequential layer model
         self.activations.append(self.inputs)
         for layer in self.layers:
+            # Go to Layer classes' __call__ function in layers.py
             hidden = layer(self.activations[-1])
+            # Return from Layer classes' __call__ function in layers.py
             self.activations.append(hidden)
         self.outputs = self.activations[-1]
 
@@ -53,10 +66,17 @@ class Model(object):
         self.vars = {var.name: var for var in variables}
 
         # Build metrics
+        # Go to GraphConvolution classes' _loss function
         self._loss()
+        # Return from GraphConvolution classes' _loss function
+
+        # Go to GraphConvolution classes' _accuracy function
         self._accuracy()
+        # Return from GraphConvolution classes' _accuracy function
 
         self.opt_op = self.optimizer.minimize(self.loss)
+
+        # Return to GCN class's constructor
 
     def predict(self):
         pass
@@ -131,8 +151,13 @@ class MLP(Model):
 
 
 class GCN(Model):
+    
     def __init__(self, placeholders, input_dim, **kwargs):
+        # Came here from train.py
+
+        # Go to Model Classes' constructor
         super(GCN, self).__init__(**kwargs)
+        # Returned from Model Classes' constructor
 
         self.inputs = placeholders['features']
         self.input_dim = input_dim
@@ -142,9 +167,16 @@ class GCN(Model):
 
         self.optimizer = tf.train.AdamOptimizer(learning_rate=FLAGS.learning_rate)
 
+        # Go to Model class's build function
         self.build()
+        # Returned from Model class's build function
+
+        # Return to train.py
 
     def _loss(self):
+
+        # Came here from Model class's build function
+
         # Weight decay loss
         for var in self.layers[0].vars.values():
             self.loss += FLAGS.weight_decay * tf.nn.l2_loss(var)
@@ -153,14 +185,24 @@ class GCN(Model):
         self.loss += masked_softmax_cross_entropy(self.outputs, self.placeholders['labels'],
                                                   self.placeholders['labels_mask'])
 
+        # Return to Model class's build function
+
     def _accuracy(self):
+
+        # Came here from Model class's build function
+
         self.accuracy = masked_accuracy(self.outputs, self.placeholders['labels'],
                                         self.placeholders['labels_mask'])
         self.pred = tf.argmax(self.outputs, 1)
         self.labels = tf.argmax(self.placeholders['labels'], 1)
 
+        # Return to Model class's build function
+
     def _build(self):
 
+        # Came here from Model class's build function
+
+        # Go to GraphConvolution class's constructor in layers.py
         self.layers.append(GraphConvolution(input_dim=self.input_dim,
                                             output_dim=FLAGS.hidden1,
                                             placeholders=self.placeholders,
@@ -169,13 +211,18 @@ class GCN(Model):
                                             featureless=True,
                                             sparse_inputs=True,
                                             logging=self.logging))
+        # Returned from GraphConvolution class's constructor in layers.py
 
+        # Go to GraphConvolution class's constructor in layers.py
         self.layers.append(GraphConvolution(input_dim=FLAGS.hidden1,
                                             output_dim=self.output_dim,
                                             placeholders=self.placeholders,
                                             act=lambda x: x, #
                                             dropout=True,
                                             logging=self.logging))
+        # Returned from GraphConvolution class's constructor in layers.py
+
+        # Return to Model classes' build() function
 
     def predict(self):
         return tf.nn.softmax(self.outputs)
